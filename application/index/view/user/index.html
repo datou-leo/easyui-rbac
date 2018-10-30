@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="utf-8" />
+    <title>EasyUI Demo</title>
+    {load href="__STATIC__/easyui/css/themes/default/easyui.css" /}
+    {load href="__STATIC__/easyui/css/themes/icon.css" /}
+    {load href="__STATIC__/easyui/css/common.css" /}
+    {load href="__STATIC__/easyui/js/jquery-1.11.2.min.js" /}
+    {load href="__STATIC__/easyui/js/jquery.easyui.min.js" /}
+    {load href="__STATIC__/easyui/js/easyui-lang-zh_CN.js" /}
+</head>
+<body>
+<table id="dg" title="用户列表" class="easyui-datagrid" style="width:550px;height:250px"
+       url="{:url('user/index')}" pagination="true"
+       toolbar="#toolbar" rownumbers="true" fitColumns="true" singleSelect="true">
+    <thead>
+    <tr>
+        <th field="name" width="50">名字</th>
+        <th field="email" width="50">电子邮件</th>
+    </tr>
+    </thead>
+</table>
+<div id="toolbar">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加用户</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">编辑用户</a>
+</div>
+
+<div id="dlg" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px"
+     closed="true" buttons="#dlg-buttons">
+    <div class="ftitle">用户信息</div>
+    <form id="fm" method="post">
+        <div class="fitem">
+            <label>名字:</label>
+            <input name="name" class="easyui-validatebox" required="true">
+        </div>
+        <div class="fitem">
+            <label>邮件:</label>
+            <input name="email" class="easyui-validatebox" validType="email">
+        </div>
+
+        <div class="fitem">
+            <label>角色:</label>
+            {notempty name="role_list"}
+            {volist name="role_list" id="vo"}
+            <input type="checkbox" name="role_ids[]" id="role{$vo.id}" value="{$vo.id}"> {$vo.name}
+            {/volist}
+            {/notempty}
+        </div>
+
+        <input type="hidden" name="id" value=""/>
+
+    </form>
+</div>
+<div id="dlg-buttons">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')">取消</a>
+</div>
+
+<script type="text/javascript">
+    var url="";
+    function add(){
+        $('#dlg').dialog('open').dialog('setTitle','添加用户');
+        $('#fm').form('clear');
+        url = "{:url('user/create')}";
+    }
+
+    //添加用户
+    function save(){
+        $('#fm').form('submit',{
+            url: url,
+            onSubmit: function(param){
+                param.is_ajax=true;
+                return $(this).form('validate');
+            },
+            success: function(result){
+                var result = eval('(' + result + ')');
+                if(result.success){
+                    $('#dlg').dialog('close');      // close the dialog
+                    $('#dg').datagrid('reload');    // reload the user data
+                }else{
+                    $.messager.alert('Info', result.message, 'info');
+                }
+            }
+        });
+    }
+    //编辑用户加上设置角色
+    function edit(){
+        var row = $('#dg').datagrid('getSelected');
+        if (row){
+            $('#dlg').dialog('open').dialog('setTitle','编辑角色');
+            $('#fm').form('load',row);
+
+            if (row.related_role_ids){
+                var ids = row.related_role_ids.split(',');
+                for(var i=0; i<ids.length; i++){
+                    $('#role'+ids[i]).attr('checked',true);
+                }
+            }
+            $('#dlg').dialog('setTitle', '修改角色').dialog('open');
+            $("#fm input[name='id']").val(row.id);
+            url = "{:url('user/edit')}";
+        }else {
+            $.messager.alert('Info',"请先选择角色，再进行修改。",'info');
+        }
+    }
+
+</script>
+</body>
+</html>

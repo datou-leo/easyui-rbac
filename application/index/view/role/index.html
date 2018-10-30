@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="utf-8" />
+    <title>EasyUI Demo</title>
+    {load href="__STATIC__/easyui/css/themes/default/easyui.css" /}
+    {load href="__STATIC__/easyui/css/themes/icon.css" /}
+    {load href="__STATIC__/easyui/css/common.css" /}
+    {load href="__STATIC__/easyui/js/jquery-1.11.2.min.js" /}
+    {load href="__STATIC__/easyui/js/jquery.easyui.min.js" /}
+    {load href="__STATIC__/easyui/js/easyui-lang-zh_CN.js" /}
+</head>
+<body>
+<table id="dg" title="角色列表" class="easyui-datagrid" style="width:550px;height:250px"
+       url="{:url('role/index')}" pagination="true"
+       toolbar="#toolbar" rownumbers="true" fitColumns="true" singleSelect="true">
+    <thead>
+    <tr>
+        <th field="name" width="50">角色</th>
+    </tr>
+    </thead>
+</table>
+<div id="toolbar">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加角色</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">编辑角色</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit_access()">设置权限</a>
+</div>
+
+<div id="dlg" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px"
+     closed="true" buttons="#dlg-buttons">
+    <div class="ftitle">角色信息</div>
+    <form id="fm" method="post">
+        <div class="fitem">
+            <label>名字:</label>
+            <input name="name" class="easyui-validatebox" required="true">
+        </div>
+
+        <input type="hidden" name="id" value=""/>
+    </form>
+</div>
+<div id="dlg-buttons">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')">取消</a>
+</div>
+
+
+<div id="dlg2" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px"
+     closed="true" buttons="#dlg2-buttons">
+
+    <form id="fm2" method="post">
+            <ul class="easyui-tree">
+
+            </ul>
+            <input type="hidden" name="id" value=""/>
+    </form>
+</div>
+<div id="dlg2-buttons">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save_access()">保存</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')">取消</a>
+</div>
+
+
+<script type="text/javascript">
+        var url="";
+        function add(){
+            $('#dlg').dialog('open').dialog('setTitle','添加角色');
+            $('#fm').form('clear');
+            url = "{:url('role/create')}";
+        }
+
+        //保存角色
+        function save(){
+            $('#fm').form('submit',{
+                url: url,
+                onSubmit: function(param){
+                    param.is_ajax=true;
+                    return $(this).form('validate');
+                },
+                success: function(result){
+                    var result = eval('(' + result + ')');
+                    if(result.success){
+                        $('#dlg').dialog('close');      // close the dialog
+                        $('#dg').datagrid('reload');    // reload the user data
+                    }else{
+                        $.messager.alert('Info', result.message, 'info');
+                    }
+                }
+            });
+        }
+
+        //编辑角色
+        function edit(){
+            var row = $('#dg').datagrid('getSelected');
+            if (row){
+                $('#dlg').dialog('open').dialog('setTitle','编辑角色');
+                $('#fm').form('load',row);
+                $("#fm input[name='id']").val(row.id);
+                url = "{:url('role/edit')}";
+            }else {
+                $.messager.alert('Info',"请先选择角色，再进行修改。",'info');
+            }
+        }
+
+        //保存授权
+        function save_access(){
+            $('#fm2').form('submit',{
+                url: url,
+                onSubmit: function(param){
+                    var nodes = $(".easyui-tree").tree('getChecked');
+                    var access_ids = [];
+                    for (var i = 0; i < nodes.length; i++) {
+                        access_ids.push(nodes[i].id);
+                    }
+
+                    var menu_access_ids = [];
+                    var eles =  $(".easyui-tree").tree('getChecked',['checked','indeterminate']);
+                    for (var i = 0; i < eles.length; i++) {
+                        menu_access_ids.push(eles[i].id);
+                    }
+                    param.is_ajax=true;
+                    param.access_ids=access_ids;//只包含最下级节点
+                    param.menu_access_ids=menu_access_ids;//包含菜单和权限
+                    return $(this).form('validate');
+                },
+                success: function(result){
+                    var result = eval('(' + result + ')');
+                    if(result.success){
+                        $('#dlg2').dialog('close');      // close the dialog
+                        $('#dg').datagrid('reload');    // reload the user data
+                    }else{
+                        $.messager.alert('Info', result.message, 'info');
+                    }
+                }
+            });
+        }
+
+        //编辑角色权限
+        function edit_access(){
+            var row = $('#dg').datagrid('getSelected');
+            if (row){
+                $('#dlg2').dialog('open').dialog('setTitle','授权');
+                var jsonString = row.access_json;
+                var jsObject = JSON.parse(jsonString);
+                $('.easyui-tree').tree({
+                    data:jsObject,
+                    checkbox:true
+                });
+                $("#fm2 input[name='id']").val(row.id);
+                url = "{:url('role/access')}";
+            }else {
+                $.messager.alert('Info',"请先选择角色，再进行授权。",'info');
+            }
+        }
+
+
+
+
+
+
+</script>
+</body>
+</html>

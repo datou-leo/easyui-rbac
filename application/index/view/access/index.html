@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="utf-8" />
+    <title>EasyUI Demo</title>
+    {load href="__STATIC__/easyui/css/themes/default/easyui.css" /}
+    {load href="__STATIC__/easyui/css/themes/icon.css" /}
+    {load href="__STATIC__/easyui/css/common.css" /}
+    {load href="__STATIC__/easyui/js/jquery-1.11.2.min.js" /}
+    {load href="__STATIC__/easyui/js/jquery.easyui.min.js" /}
+    {load href="__STATIC__/easyui/js/easyui-lang-zh_CN.js" /}
+</head>
+<body>
+
+
+<!-- 组织机构管理 -->
+<div class="easyui-layout" data-options="fit:true">
+    <!--<div class="inner-header" data-options="region:'north'">-->
+        <!--<a href="#" class="easyui-linkbutton" iconCls="icon-add">新增</a>-->
+        <!--<a href="#" class="easyui-linkbutton" iconCls="icon-edit">编辑</a>-->
+        <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove">删除</a>-->
+    <!--</div>-->
+    <div class="tree-div" data-options="region:'west'">
+        <div class="easyui-panel" title="菜单列表" data-options="fit:true">
+            <ul class="easyui-tree">
+
+            </ul>
+        </div>
+    </div>
+
+    <div id="mm" class="easyui-menu" style="width:120px;">
+        <div iconCls="icon-add" onclick="newItem()">新增权限</div>
+        <div iconCls="icon-edit" onclick="editItem()">修改权限</div>
+        <div class="menu-sep"></div>
+        <div onclick="move('up')">上移</div>
+        <div onclick="move('down')">下移</div>
+    </div>
+
+    <div class="inner-content" data-options="region:'center'">
+        <table id="dg" title="权限列表" class="easyui-datagrid" style="width:550px;height:250px"
+               url="{:url('access/index')}" pagination="true"
+               toolbar="#toolbar" rownumbers="true" fitColumns="true" singleSelect="true">
+            <thead>
+            <tr>
+                <th field="title" width="50">名字</th>
+                <th field="url" width="50">链接</th>
+            </tr>
+            </thead>
+        </table>
+        <div id="toolbar">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加权限</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">编辑用户</a>
+        </div>
+
+        <div id="dlg" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px"
+             closed="true" buttons="#dlg-buttons">
+            <div class="ftitle">用户信息</div>
+            <form id="fm" method="post">
+                <div class="fitem">
+                    <label>名字:</label>
+                    <input name="title" class="easyui-validatebox" required="true">
+                </div>
+
+
+
+                <div class="fitem">
+                    <label>链接:</label>
+                    <input name="url" type="text" >
+                </div>
+
+                <div class="fitem">
+                    <label>类别:</label>
+                    <input type="radio" name="type" value="1">菜单
+                    <input type="radio" name="type" value="2">菜单+权限
+                    <input type="radio" name="type" value="3">权限
+                </div>
+
+
+                <div class="fitem">
+                  <label>父级:</label>
+                    <input type="text" name="parent_id" class="easyui-combotree"
+                           url="{:url('access/tree')}">
+                </div>
+
+                <input type="hidden" name="id" value=""/>
+
+            </form>
+        </div>
+        <div id="dlg-buttons">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')">取消</a>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+
+    var url="";
+    function add(){
+        $('#dlg').dialog('open').dialog('setTitle','添加权限');
+        $('#fm').form('clear');
+        url = "{:url('access/create')}";
+    }
+
+    //添加用户
+    function save(){
+        $('#fm').form('submit',{
+            url: url,
+            onSubmit: function(param){
+                param.is_ajax=true;
+                return $(this).form('validate');
+            },
+            success: function(result){
+                var result = eval('(' + result + ')');
+                if(result.success){
+                    $('#dlg').dialog('close');      // close the dialog
+                    $('#dg').datagrid('reload');    // reload the user data
+                    init();
+                }else{
+                    $.messager.alert('Info', result.message, 'info');
+                }
+            }
+        });
+    }
+    //编辑用户加上设置角色
+    function edit(){
+        var row = $('#dg').datagrid('getSelected');
+        if (row){
+            $('#fm').form('load',row);
+            $('#dlg').dialog('setTitle', '编辑权限').dialog('open');
+            $("#fm input[name='id']").val(row.id);
+            url = "{:url('access/edit')}";
+        }else {
+            $.messager.alert('Info',"请先选择权限，再进行修改。",'info');
+        }
+    }
+
+
+    $(function(){
+        init();
+    });
+
+    function init(){
+        $('.easyui-tree').tree({
+            url:"{:url('access/tree')}",
+            onClick:function(node){
+                $('#dg').datagrid('reload', {parent_id:node.id});
+            }
+        });
+    }
+
+
+</script>
+</body>
+</html>

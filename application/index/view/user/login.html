@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="utf-8" />
+    <title>EasyUI Demo</title>
+    {load href="__STATIC__/easyui/css/themes/default/easyui.css" /}
+    {load href="__STATIC__/easyui/css/themes/icon.css" /}
+    {load href="__STATIC__/easyui/css/common.css" /}
+    {load href="__STATIC__/easyui/js/jquery-1.11.2.min.js" /}
+    {load href="__STATIC__/easyui/js/jquery.easyui.min.js" /}
+    {load href="__STATIC__/easyui/js/easyui-lang-zh_CN.js" /}
+</head>
+{php}$u=current_user();{/php}
+{notempty name="u"}
+<body class="easyui-layout" id="layout" style="visibility:hidden;">
+
+    <div region="north" id="header">
+        <img src="__STATIC__/easyui/img/logo.png" class="logo" />
+        <div class="top-btns">
+
+
+            <span>欢迎您，{$u.name}</span>
+
+            <a href="#" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-lock'">修改密码</a>
+            <a href="{:url('user/logout')}" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-clear'">退出系统</a>
+            <!--<select class="easyui-combobox" data-options="editable:false">-->
+                <!--<option value="0" selected="selected">中文</option>-->
+                <!--<option value="1">English</option>-->
+            <!--</select>-->
+        </div>
+    </div>
+
+
+    {volist name="menu" id="vo" }
+    <div region="west" split="true" title="{$vo.title}" id="naver">
+        {notempty name="vo.children"}
+        <div class="easyui-accordion" fit="true" id="navmenu">
+            {volist name="vo.children" id="co" }
+            <div title="{$co.title}">
+                {notempty name="co.children"}
+                <ul class="navmenu">
+                    {volist name="co.children" id="do" }
+                    <li><a href="#" data-url="{:url($do.url)}">{$do.title}</a></li>
+                    {/volist}
+                </ul>
+                {/notempty}
+            </div>
+            {/volist}
+        </div>
+        {/notempty}
+    </div>
+    {/volist}
+
+    <div region="center" id="content">
+        <div class="easyui-tabs" fit="true" id="tt">
+
+        </div>
+    </div>
+
+    <div region="south" id="footer">某某后台管理系统 V1.0</div>
+
+
+
+<script type="text/javascript">
+    $(function() {
+        //添加新的Tab页
+        $("#navmenu").on("click", "a[data-url]", function(e) {
+            e.preventDefault();
+            var tabTitle = $(this).text();
+            var tabUrl = $(this).data("url");
+
+            if($("#tt").tabs("exists", tabTitle)) { //判断该Tab页是否已经存在
+                $("#tt").tabs("select", tabTitle);
+            }else {
+
+                var content = '<iframe scrolling="no" frameborder="0"  src="'+tabUrl+'" style="display: block ;width:100%;height:100%;"></iframe>';
+                $('#tt').tabs('add',{
+                    title:tabTitle,
+                    content:content,
+                    closable:true
+                });
+            }
+            $("#navmenu .active").removeClass("active");
+            $(this).parent().addClass("active");
+        });
+
+        //解决闪屏的问题
+        window.setTimeout(function() {
+            $("#layout").css("visibility", "visible");
+        }, 800);
+    });
+</script>
+</body>
+{/notempty}
+
+
+
+{empty name="u"}
+<body>
+<div id="win" class="easyui-window" title="请先登录" data-options="modal:true,closed:false,iconCls:'Lockgo',closable:false,minimizable:false" style="width:400px;padding:20px 70px 20px 70px;">
+
+    <form   method="post">
+
+    <div style="margin-bottom:10px">
+        <input class="easyui-textbox" name="name" id="name" type="text" style="width:100%;height:30px;padding:12px" data-options="prompt:'登录用户名',iconCls:'icon-man',iconWidth:38">
+    </div>
+    <div style="margin-bottom:20px">
+        <input class="easyui-textbox" name="password" id="password" type="password" style="width:100%;height:30px;padding:12px" data-options="prompt:'登录密码',iconCls:'icon-lock',iconWidth:38">
+    </div>
+    <!--<div style="margin-bottom:20px">-->
+    <!--<input class="easyui-textbox" type="text" id="logyzm" style="width:50%;height:30px;padding:12px" data-options="prompt:'验证码'"> <a href="javascript:;" class="showcode" onclick="changeVeryfy()"><img style=" margin:0 0 0 3px ; vertical-align:middle; height:26px;" src="/index.php?s=/Xjadmin/verifyCode"></a>-->
+    <!--</div>-->
+    <!--<div style="margin-bottom:20px">-->
+        <!--<input type="checkbox" checked="checked" id="logrem">-->
+        <!--<span>Remember me</span>-->
+    <!--</div>-->
+    <div>
+        <a href="javascript:;" onclick="dologin()" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" style="padding:5px 0px;width:100%;">
+            <span style="font-size:14px;">登录</span>
+        </a>
+    </div>
+    </form>
+</div>
+
+<script type="text/javascript">
+
+    function dologin(){
+        $("form").form('submit',{
+            url:"{:url('user/login_handle')}",
+            onSubmit:function(){
+                if($("form input[name='name']").length<1){
+                    $.messager.alert('Info', "用户名不能为空aa", 'info');
+                    return false;
+                }
+                return $(this).form('validate');
+            },
+            success:function(data){
+                var data = eval('(' + data + ')');
+                if(data.success){
+                    location.reload();
+                }else{
+                    $.messager.alert('Info', data.message, 'info');
+                }
+            }
+        });
+    }
+
+    $(function(){
+
+        $('#win').window({
+            collapsible:false,
+            minimizable:false,
+            maximizable:false
+        });
+    })
+</script>
+</body>
+{/empty}
+</html>
+
+
